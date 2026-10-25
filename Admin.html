@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root { --bg:#f4f5f9; --card:#fff; --text:#1d1d24; --muted:#5f5f6b; --line:#e3e4ec; --accent:#1f5eff; --accent-soft:#e8eeff; --ok:#1b8a4b; --ok-soft:#e6f5ec; --warn:#a15c00; --warn-soft:#fff3df; --err:#c62828; --err-soft:#fdecec; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+    .wrap { max-width:860px; margin:0 auto; padding:24px 16px 120px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+    header h1 { font-size:21px; margin:0; }
+    .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#ececf2; color:var(--muted); }
+    .pill.ok { background:var(--ok-soft); color:var(--ok); }
+    .pill.warn { background:var(--warn-soft); color:var(--warn); }
+    .pill.err { background:var(--err-soft); color:var(--err); }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin-bottom:16px; }
+    .card h2 { font-size:15px; margin:0 0 4px; }
+    .card .hint { color:var(--muted); margin:0 0 14px; font-size:13px; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 0; border-top:1px solid var(--line); }
+    .row:first-of-type { border-top:0; }
+    .row .lbl { flex:1; min-width:0; }
+    .row .lbl b { display:block; font-weight:600; }
+    .row .lbl small { color:var(--muted); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px 16px; }
+    label.f { display:block; font-weight:600; font-size:12.5px; margin-bottom:4px; }
+    label.f small { font-weight:400; color:var(--muted); }
+    input[type=text], input[type=email], input[type=number], select, textarea {
+      width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; color:inherit; }
+    textarea { min-height:60px; resize:vertical; }
+    input:disabled { background:#f6f6f9; color:var(--muted); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid #ffc94d; outline-offset:2px; }
+    /* switch */
+    .sw { position:relative; width:42px; height:24px; flex:0 0 auto; }
+    .sw input { opacity:0; width:0; height:0; position:absolute; }
+    .sw span { position:absolute; inset:0; background:#cfd0da; border-radius:999px; transition:.15s; cursor:pointer; }
+    .sw span::after { content:""; position:absolute; left:3px; top:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.15s; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+    .sw input:checked + span { background:var(--accent); }
+    .sw input:checked + span::after { transform:translateX(18px); }
+    .sw input:focus-visible + span { outline:3px solid #ffc94d; outline-offset:2px; }
+    .hours { display:grid; grid-template-columns:120px 1fr; gap:8px 12px; align-items:center; }
+    .hours .day { display:flex; align-items:center; gap:10px; font-weight:600; }
+    .cals { display:grid; gap:6px; }
+    .cals label { display:flex; gap:8px; align-items:center; }
+    .cals small { color:var(--muted); }
+    button { font:inherit; font-weight:600; border:0; border-radius:9px; padding:9px 16px; cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; }
+    button.ghost { background:#ececf2; color:var(--text); }
+    button.danger { background:var(--err-soft); color:var(--err); }
+    button:disabled { opacity:.5; cursor:default; }
+    .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .savebar { position:fixed; left:0; right:0; bottom:0; background:#1d1d24; color:#fff; padding:12px 16px; display:flex; justify-content:center; gap:12px; align-items:center; transform:translateY(100%); transition:.2s; z-index:5; }
+    .savebar.show { transform:none; }
+    .savebar button.ghost { background:#3a3a46; color:#fff; }
+    .toast { position:fixed; top:16px; left:50%; transform:translateX(-50%); padding:10px 16px; border-radius:10px; font-weight:600; z-index:6; display:none; max-width:90vw; }
+    .toast.ok { background:var(--ok); color:#fff; display:block; }
+    .toast.err { background:var(--err); color:#fff; display:block; }
+    .tablewrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:8px 6px; border-top:1px solid var(--line); vertical-align:top; }
+    th { font-size:12px; color:var(--muted); font-weight:600; border-top:0; }
+    td a { color:var(--accent); font-weight:600; text-decoration:none; }
+    .muted { color:var(--muted); }
+    .linkbox { display:flex; gap:8px; }
+    .linkbox input { flex:1; }
+    .tests div { padding:6px 0; }
+    .hidden { display:none !important; }
+    #loading { text-align:center; padding:60px 0; color:var(--muted); }
+    @media (max-width:560px) { .hours { grid-template-columns:1fr; } .card { padding:16px; } }
+  </style>
+</head>
+<body>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<main class="wrap">
+  <header>
+    <h1>Catch-up admin</h1>
+    <span class="pill" id="statusPill">Loading</span>
+  </header>
+  <div id="loading">Loading settings...</div>
+
+  <div id="app" class="hidden">
+
+    <!-- Upcoming -->
+    <div class="card">
+      <h2>Open and upcoming catch-ups</h2>
+      <p class="hint">Open one to confirm it, choose online or in person, move it or cancel it.</p>
+      <div id="reqEmpty" class="muted">Nothing open or upcoming.</div>
+      <div class="tablewrap">
+        <table id="reqTable" class="hidden">
+          <thead><tr><th>When</th><th>Guest</th><th>Status</th><th></th></tr></thead>
+          <tbody id="reqBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Booking page -->
+    <div class="card">
+      <h2>Booking page</h2>
+      <p class="hint">Your public link. Share this one, never the admin link.</p>
+      <div class="linkbox"><input type="text" id="bookingUrl" readonly aria-label="Booking link"><button class="ghost" type="button" id="copyLink">Copy</button></div>
+      <div class="row" style="margin-top:8px">
+        <div class="lbl"><b>Accept new requests</b><small>Switch off to pause. Guests then see the message below.</small></div>
+        <label class="sw"><input type="checkbox" data-key="BOOKING_ENABLED" aria-label="Accept new requests"><span></span></label>
+      </div>
+      <label class="f" for="PAUSED_MESSAGE">Message while paused</label>
+      <textarea id="PAUSED_MESSAGE" data-key="PAUSED_MESSAGE" maxlength="500"></textarea>
+      <div class="grid" style="margin-top:12px">
+        <div><label class="f" for="OWNER_NAME">Your name <small>(shown to guests)</small></label><input type="text" id="OWNER_NAME" data-key="OWNER_NAME" maxlength="100"></div>
+        <div><label class="f" for="OWNER_EMAIL">Notification email <small>(empty = <span id="ownerDefault"></span>)</small></label><input type="email" id="OWNER_EMAIL" data-key="OWNER_EMAIL" maxlength="200"></div>
+        <div><label class="f" for="MEETING_TITLE">Event title <small>({name} = guest)</small></label><input type="text" id="MEETING_TITLE" data-key="MEETING_TITLE" maxlength="150"></div>
+        <div><label class="f" for="WEB_APP_URL">Web app URL <small>(the /exec link, used in emails)</small></label><input type="text" id="WEB_APP_URL" data-key="WEB_APP_URL" maxlength="500"></div>
+      </div>
+    </div>
+
+    <!-- Calendars -->
+    <div class="card">
+      <h2>Calendars</h2>
+      <p class="hint">Guests only see a slot when you are free in all calendars below. Events marked "Free" and events you declined do not block.</p>
+      <label class="f" for="CALENDAR_ID">Main Google calendar <small>(holds and confirmed catch-ups are created here)</small></label>
+      <select id="CALENDAR_ID" data-key="CALENDAR_ID"></select>
+      <div class="row" style="display:block;margin-top:8px">
+        <div class="lbl"><b>Other Google calendars to check</b><small>For example a family or shared team calendar.</small></div>
+        <div class="cals" id="extraCals" style="margin-top:8px"></div>
+      </div>
+      <p class="hint" id="calErr" style="color:var(--err)"></p>
+    </div>
+
+    <!-- Availability -->
+    <div class="card">
+      <h2>Availability</h2>
+      <p class="hint">Times in <b id="tzLabel"></b>. Every catch-up is 1 hour. Guests get the earliest free hour in these windows. Switch a day off for no catch-ups.</p>
+      <div class="hours" id="hours"></div>
+      <div class="grid" style="margin-top:16px">
+        <div><label class="f" for="BUFFER_MINUTES">Buffer before and after <small>(minutes)</small></label><input type="number" id="BUFFER_MINUTES" data-key="BUFFER_MINUTES" min="0" max="240" step="5"></div>
+        <div><label class="f" for="MIN_NOTICE_HOURS">Minimum notice <small>(hours)</small></label><input type="number" id="MIN_NOTICE_HOURS" data-key="MIN_NOTICE_HOURS" min="0" max="720"></div>
+        <div><label class="f" for="DAYS_AHEAD">Bookable days ahead</label><input type="number" id="DAYS_AHEAD" data-key="DAYS_AHEAD" min="1" max="60"></div>
+        <div><label class="f" for="MAX_PER_DAY">Catch-ups per day <small>(0 = no limit)</small></label><input type="number" id="MAX_PER_DAY" data-key="MAX_PER_DAY" min="0" max="20"></div>
+        <div><label class="f" for="TIMEZONE">Time zone</label><input type="text" id="TIMEZONE" data-key="TIMEZONE" maxlength="60"></div>
+      </div>
+    </div>
+
+    <!-- Locations -->
+    <div class="card">
+      <h2>Favourite places</h2>
+      <p class="hint">One per line. Offered as quick picks when you confirm a catch-up in person.</p>
+      <textarea id="LOCATIONS" data-key="LOCATIONS" rows="4" placeholder="Café Central, Hauptstraße 1, 77694 Kehl&#10;My office, Room 2.14"></textarea>
+    </div>
+
+    <!-- Requests and privacy -->
+    <div class="card">
+      <h2>Requests and privacy</h2>
+      <div class="grid">
+        <div><label class="f" for="PENDING_EXPIRY_HOURS">Release unanswered requests after <small>(hours)</small></label><input type="number" id="PENDING_EXPIRY_HOURS" data-key="PENDING_EXPIRY_HOURS" min="1" max="720"></div>
+        <div><label class="f" for="MAX_PENDING_PER_EMAIL">Open requests per guest email</label><input type="number" id="MAX_PENDING_PER_EMAIL" data-key="MAX_PENDING_PER_EMAIL" min="1" max="20"></div>
+        <div><label class="f" for="MAX_REQUESTS_PER_HOUR">New requests per hour <small>(all guests)</small></label><input type="number" id="MAX_REQUESTS_PER_HOUR" data-key="MAX_REQUESTS_PER_HOUR" min="1" max="200"></div>
+        <div><label class="f" for="RETENTION_DAYS">Keep guest data <small>(days after the catch-up)</small></label><input type="number" id="RETENTION_DAYS" data-key="RETENTION_DAYS" min="1" max="365"></div>
+      </div>
+      <label class="f" for="PRIVACY_NOTICE" style="margin-top:12px">Privacy notice guests must accept <small>({days} = days above)</small></label>
+      <textarea id="PRIVACY_NOTICE" data-key="PRIVACY_NOTICE" maxlength="1000"></textarea>
+    </div>
+
+    <!-- Erasure -->
+    <div class="card">
+      <h2>Delete a guest's data</h2>
+      <p class="hint">For deletion requests. Removes every stored request of this email address. Events already in your calendar stay there.</p>
+      <div class="linkbox"><input type="email" id="eraseEmail" placeholder="guest@example.com" aria-label="Guest email"><button class="danger" type="button" id="erase">Delete</button></div>
+    </div>
+
+    <!-- Test -->
+    <div class="card">
+      <h2>Health check</h2>
+      <p class="hint">Tests calendar access, the hourly job, email quota and storage.</p>
+      <div class="tests" id="tests" aria-live="polite"></div>
+      <div class="btns"><button class="ghost" type="button" id="runTest">Run check</button></div>
+    </div>
+  </div>
+</main>
+
+<div class="savebar" id="savebar">
+  <span>Unsaved changes</span>
+  <button class="ghost" type="button" id="discard">Discard</button>
+  <button class="primary" type="button" id="save">Save settings</button>
+</div>
+
+<script>
+  const KEY = (<?!= data ?>).key;
+  const DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  let state = null;
+  const $ = function (id) { return document.getElementById(id); };
+  function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+  function toast(cls, msg) {
+    const t = $('toast'); t.className = 'toast ' + cls; t.textContent = msg;
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = 'toast'; }, cls === 'err' ? 6000 : 2500);
+  }
+  function fail(e) { toast('err', (e && e.message) || 'Something went wrong.'); busy(false); }
+  function busy(on) { document.querySelectorAll('button').forEach(function (b) { b.disabled = on; }); }
+  function dirty(on) { $('savebar').classList.toggle('show', on); }
+
+  function load() {
+    google.script.run.withSuccessHandler(render).withFailureHandler(function (e) {
+      $('loading').textContent = (e && e.message) || 'Could not load.';
+    }).adminGetState(KEY);
+  }
+
+  function render(s) {
+    state = s;
+    const c = s.settings;
+    $('loading').classList.add('hidden');
+    $('app').classList.remove('hidden');
+
+    const pill = $('statusPill');
+    pill.textContent = c.BOOKING_ENABLED ? 'Bookings open' : 'Bookings paused';
+    pill.className = 'pill ' + (c.BOOKING_ENABLED ? 'ok' : 'warn');
+
+    $('bookingUrl').value = s.bookingUrl || '(deploy the web app first)';
+    $('ownerDefault').textContent = s.ownerEmail;
+    $('tzLabel').textContent = c.TIMEZONE;
+
+    document.querySelectorAll('[data-key]').forEach(function (el) {
+      const k = el.dataset.key;
+      if (el.type === 'checkbox') el.checked = !!c[k];
+      else if (el.tagName !== 'SELECT') el.value = c[k] == null ? '' : c[k];
+    });
+    $('LOCATIONS').value = (c.LOCATIONS || []).join('\n');
+    $('WEB_APP_URL').value = s.webAppUrlProperty;
+
+    // calendars
+    const sel = $('CALENDAR_ID'); sel.innerHTML = '';
+    const writable = s.calendars.filter(function (x) { return x.access === 'owner' || x.access === 'writer'; });
+    const seen = {};
+    writable.forEach(function (cal) {
+      const o = document.createElement('option');
+      o.value = cal.primary ? 'primary' : cal.id;
+      o.textContent = cal.name + (cal.primary ? ' (primary)' : '');
+      seen[o.value] = 1; sel.appendChild(o);
+    });
+    if (!seen[c.CALENDAR_ID]) { const o = document.createElement('option'); o.value = c.CALENDAR_ID; o.textContent = c.CALENDAR_ID; sel.appendChild(o); }
+    sel.value = c.CALENDAR_ID;
+    $('calErr').textContent = s.calendarError ? 'Could not list calendars: ' + s.calendarError : '';
+
+    const extra = $('extraCals'); extra.innerHTML = '';
+    const others = s.calendars.filter(function (x) { return !x.primary; });
+    if (!others.length) extra.innerHTML = '<span class="muted">No other calendars found in this Google account.</span>';
+    others.forEach(function (cal) {
+      const l = document.createElement('label');
+      l.innerHTML = '<input type="checkbox"> <span></span> <small></small>';
+      l.querySelector('input').value = cal.id;
+      l.querySelector('input').checked = (c.EXTRA_BUSY_CALENDARS || []).indexOf(cal.id) >= 0;
+      l.querySelector('span').textContent = cal.name;
+      l.querySelector('small').textContent = cal.access === 'freeBusyReader' ? 'busy only' : '';
+      extra.appendChild(l);
+    });
+
+    // working hours
+    const h = $('hours'); h.innerHTML = '';
+    for (let d = 1; d <= 7; d++) {
+      const wins = (c.WORKING_HOURS || {})[d] || [];
+      const day = document.createElement('div'); day.className = 'day';
+      day.innerHTML = '<label class="sw"><input type="checkbox"><span></span></label><span></span>';
+      day.querySelector('span:last-child').textContent = DAYS[d];
+      const cb = day.querySelector('input'); cb.checked = wins.length > 0; cb.dataset.day = d;
+      cb.setAttribute('aria-label', DAYS[d]);
+      const inp = document.createElement('input'); inp.type = 'text'; inp.dataset.hours = d;
+      inp.setAttribute('aria-label', DAYS[d] + ' hours');
+      inp.placeholder = '09:00-12:00, 13:00-17:00';
+      inp.value = wins.map(function (w) { return w[0] + '-' + w[1]; }).join(', ');
+      inp.disabled = !cb.checked;
+      cb.addEventListener('change', function () {
+        inp.disabled = !cb.checked;
+        if (cb.checked && !inp.value) inp.value = '09:00-12:00, 13:00-17:00';
+      });
+      h.appendChild(day); h.appendChild(inp);
+    }
+
+    // catch-ups
+    const body = $('reqBody'); body.innerHTML = '';
+    $('reqEmpty').classList.toggle('hidden', s.requests.length > 0);
+    $('reqTable').classList.toggle('hidden', !s.requests.length);
+    s.requests.forEach(function (r) {
+      const tr = document.createElement('tr');
+      let st;
+      if (r.status === 'pending') st = '<span class="pill warn">Pending</span><br><span class="muted">prefers ' + esc(r.preference.toLowerCase()) + '</span>';
+      else st = '<span class="pill ok">' + (r.mode === 'online' ? 'Online' : 'In person') + '</span>' +
+        (r.mode === 'inperson' ? '<br><span class="muted">' + esc(r.location) + '</span>' : '');
+      tr.innerHTML = '<td>' + esc(r.when) + '</td>' +
+        '<td><b>' + esc(r.name) + '</b><br><span class="muted">' + esc(r.email) + '</span>' + (r.topic ? '<br><span class="muted">' + esc(r.topic) + '</span>' : '') + '</td>' +
+        '<td>' + st + '</td>' +
+        '<td><a target="_blank" href="' + esc(r.manageUrl) + '">' + (r.status === 'pending' ? 'Review' : 'Manage') + '</a>' +
+        (r.link ? '<br><a target="_blank" href="' + esc(r.link) + '">Join</a>' : '') + '</td>';
+      body.appendChild(tr);
+    });
+
+    dirty(false);
+  }
+
+  function collect() {
+    const out = {};
+    document.querySelectorAll('[data-key]').forEach(function (el) {
+      const k = el.dataset.key;
+      if (el.type === 'checkbox') out[k] = el.checked;
+      else out[k] = el.value;
+    });
+    out.EXTRA_BUSY_CALENDARS = Array.prototype.map.call(
+      document.querySelectorAll('#extraCals input:checked'), function (i) { return i.value; });
+    out.WORKING_HOURS = {};
+    document.querySelectorAll('[data-hours]').forEach(function (inp) {
+      out.WORKING_HOURS[inp.dataset.hours] = inp.disabled ? '' : inp.value;
+    });
+    return out;
+  }
+
+  function trackDirty(e) { if (e.target.closest('#app') && e.target.id !== 'eraseEmail') dirty(true); }
+  document.addEventListener('input', trackDirty);
+  document.addEventListener('change', trackDirty);
+
+  $('save').onclick = function () {
+    busy(true);
+    google.script.run.withSuccessHandler(function (s) { busy(false); render(s); toast('ok', 'Settings saved'); })
+      .withFailureHandler(fail).adminSave(KEY, collect());
+  };
+  $('discard').onclick = function () { render(state); };
+  $('copyLink').onclick = function () {
+    const i = $('bookingUrl'); i.select();
+    try { navigator.clipboard.writeText(i.value).then(function () { toast('ok', 'Link copied'); }, function () { document.execCommand('copy'); toast('ok', 'Link copied'); }); }
+    catch (err) { document.execCommand('copy'); toast('ok', 'Link copied'); }
+  };
+
+  $('erase').onclick = function () {
+    const email = $('eraseEmail').value.trim();
+    if (!email) return;
+    if (!confirm('Delete all stored data of ' + email + '? Open requests of this guest are released.')) return;
+    busy(true);
+    google.script.run.withSuccessHandler(function (n) {
+      busy(false); $('eraseEmail').value = '';
+      toast('ok', n + ' record' + (n === 1 ? '' : 's') + ' deleted');
+      load();
+    }).withFailureHandler(fail).adminDeleteGuest(KEY, email);
+  };
+
+  $('runTest').onclick = function () {
+    busy(true); $('tests').innerHTML = '<div class="muted">Running...</div>';
+    google.script.run.withSuccessHandler(function (res) {
+      busy(false);
+      $('tests').innerHTML = res.map(function (r) {
+        return '<div><span class="pill ' + (r.ok ? 'ok' : 'err') + '">' + esc(r.name) + '</span> ' + esc(r.message) + '</div>';
+      }).join('');
+    }).withFailureHandler(fail).adminTest(KEY);
+  };
+
+  load();
+</script>
+</body>
+</html>

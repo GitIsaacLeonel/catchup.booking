@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root { --bg:#f6f7fb; --card:#fff; --text:#1d1d24; --muted:#5f5f6b; --line:#e4e5ec; --accent:#1f5eff; --accent-soft:#e8eeff; --ok:#1b8a4b; --ok-soft:#e6f5ec; --warn:#a15c00; --warn-soft:#fff3df; --err:#c62828; --err-soft:#fdecec; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+    .wrap { max-width:620px; margin:0 auto; padding:32px 16px 48px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; margin-bottom:16px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    h1 { font-size:21px; margin:0; }
+    h2 { font-size:15px; margin:22px 0 8px; }
+    .card > h2:first-child { margin-top:0; }
+    .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#ececf2; color:var(--muted); }
+    .pill.ok { background:var(--ok-soft); color:var(--ok); }
+    .pill.warn { background:var(--warn-soft); color:var(--warn); }
+    dl { margin:0; display:grid; grid-template-columns:100px 1fr; gap:6px 12px; }
+    dt { color:var(--muted); }
+    dd { margin:0; white-space:pre-wrap; word-break:break-word; }
+    dd a { color:var(--accent); font-weight:600; }
+    .modes { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .mode { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--line); border-radius:10px; padding:12px; cursor:pointer; }
+    .mode input { margin-top:4px; }
+    .mode b { display:block; }
+    .mode small { color:var(--muted); }
+    .mode:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+    label.f { display:block; font-weight:600; font-size:13px; margin:14px 0 5px; }
+    input[type=text], input[type=number], input[type=datetime-local], textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; color:inherit; }
+    textarea { min-height:70px; resize:vertical; }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .chip { border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 12px; font:inherit; font-size:13px; cursor:pointer; color:inherit; }
+    .chip:hover { border-color:var(--accent); }
+    .timeline { display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--accent-soft); border-radius:8px; padding:10px 12px; }
+    .days { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; }
+    .day { flex:0 0 auto; border:1px solid var(--line); background:#fff; border-radius:10px; padding:6px 10px; cursor:pointer; text-align:center; min-width:66px; font:inherit; color:inherit; }
+    .day b { display:block; font-size:16px; }
+    .day small { color:var(--muted); font-size:12px; }
+    .day.on { border-color:var(--accent); background:var(--accent-soft); }
+    .times { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px; margin-top:8px; }
+    .time { border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 0; cursor:pointer; font:inherit; color:inherit; }
+    .time.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+    .check { display:flex; gap:8px; align-items:center; margin-top:10px; font-size:14px; }
+    .check input { margin:0; }
+    button { font:inherit; font-weight:600; border:0; border-radius:10px; padding:12px 16px; cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; width:100%; margin-top:20px; font-size:15px; }
+    button.ghost { background:#ececf2; color:var(--text); padding:7px 12px; }
+    button.danger { background:var(--err-soft); color:var(--err); width:100%; margin-top:10px; }
+    button:disabled { opacity:.55; cursor:default; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid #ffc94d; outline-offset:2px; }
+    .hl { outline:3px solid #ffc94d; outline-offset:2px; }
+    .muted { color:var(--muted); }
+    .note { font-size:13px; color:var(--muted); margin-top:10px; }
+    .status { margin-bottom:16px; padding:12px 14px; border-radius:10px; background:#f1f1f4; }
+    .status.ok { background:var(--ok-soft); color:var(--ok); }
+    .status.err { background:var(--err-soft); color:var(--err); }
+    .status a { color:inherit; font-weight:600; word-break:break-all; }
+    .hist { margin:0; padding:0; list-style:none; font-size:13px; }
+    .hist li { padding:4px 0; border-top:1px solid var(--line); }
+    .hist li:first-child { border-top:0; }
+    .hidden { display:none !important; }
+    @media (max-width:520px) { .modes { grid-template-columns:1fr; } dl { grid-template-columns:1fr; } dt { margin-top:6px; } }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1 id="h1">Catch-up</h1>
+    <span class="pill" id="pill"></span>
+  </header>
+
+  <div id="status" class="status hidden" role="status" aria-live="polite"></div>
+
+  <div class="card">
+    <dl>
+      <dt>Guest</dt><dd id="dName"></dd>
+      <dt>Email</dt><dd id="dEmail"></dd>
+      <dt>When</dt><dd id="dWhen"></dd>
+      <dt>Prefers</dt><dd id="dPref"></dd>
+      <dt>Topic</dt><dd id="dTopic"></dd>
+      <dt class="cf">Where</dt><dd class="cf" id="dWhere"></dd>
+    </dl>
+  </div>
+
+  <form class="card hidden" id="edit" novalidate>
+    <h2>How do you meet?</h2>
+    <div class="modes" role="radiogroup" aria-label="Format">
+      <label class="mode"><input type="radio" name="mode" value="online"><span><b>Online</b><small>A Google Meet link is added to the invite</small></span></label>
+      <label class="mode"><input type="radio" name="mode" value="inperson"><span><b>In person</b><small>At a place you enter below</small></span></label>
+    </div>
+
+    <div id="locBox" class="hidden">
+      <label class="f" for="location">Location</label>
+      <input type="text" id="location" maxlength="300" list="locList" placeholder="e.g. Café Central, Hauptstraße 1, Kehl">
+      <datalist id="locList"></datalist>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <h2>When</h2>
+    <div class="timeline">
+      <span id="timeText"></span>
+      <button type="button" class="ghost" id="toggleTime" aria-expanded="false" aria-controls="timeBox">Change time</button>
+    </div>
+    <div id="timeBox" class="hidden">
+      <label class="f" id="hFree">Free hours <span class="muted" id="tzNote" style="font-weight:400"></span></label>
+      <div id="slotMsg" class="muted" role="status" aria-live="polite"></div>
+      <div class="days" id="days" role="group" aria-labelledby="hFree"></div>
+      <div class="times" id="times"></div>
+      <label class="f" for="custom">Or enter any start time</label>
+      <input type="datetime-local" id="custom">
+      <label class="check"><input type="checkbox" id="force"> Book anyway, even if my calendar is busy then</label>
+    </div>
+
+    <label class="f" for="note">Note to the guest <span class="muted" style="font-weight:400">(optional, shown in the email and the invite)</span></label>
+    <textarea id="note" maxlength="1000" placeholder="e.g. I reserved a table under my name."></textarea>
+
+    <button type="submit" class="primary" id="save"></button>
+    <p class="note">The guest gets an email and the calendar invite is sent or updated right away.</p>
+  </form>
+
+  <div class="card hidden" id="cancelBox">
+    <h2 id="cancelTitle"></h2>
+    <label class="f" for="msg" style="margin-top:0">Message to the guest (optional)</label>
+    <textarea id="msg" maxlength="1000" placeholder="e.g. Could we do next week instead?"></textarea>
+    <button type="button" class="danger" id="cancel"></button>
+  </div>
+
+  <div class="card hidden" id="histBox">
+    <h2>History</h2>
+    <ul class="hist" id="hist"></ul>
+  </div>
+</main>
+
+<script>
+  let D = <?!= data ?>;
+  const $ = function (id) { return document.getElementById(id); };
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const MINUTES = 60; // every catch-up is 1 hour
+  let sel = null, slotsLoaded = false;
+  function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function fmt(iso, opts) { return new Date(iso).toLocaleString(undefined, opts); }
+  function rangeText(start) {
+    const s = new Date(start), e = new Date(s.getTime() + MINUTES * 60000);
+    return s.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + ', ' +
+      s.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) + ' - ' +
+      e.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function show(cls, html) { const st = $('status'); st.className = 'status ' + cls; st.innerHTML = html; }
+  function busy(on) { document.querySelectorAll('button').forEach(function (b) { b.disabled = on; }); }
+  function fail(e) { busy(false); show('err', esc((e && e.message) || 'Something went wrong.')); }
+  function mode() { const r = document.querySelector('input[name=mode]:checked'); return r ? r.value : ''; }
+
+  function render() {
+    const active = D.status === 'pending' || D.status === 'confirmed';
+    const labels = { pending: 'Waiting for you', confirmed: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', expired: 'Expired' };
+    $('h1').textContent = D.status === 'pending' ? 'Catch-up request' : 'Catch-up';
+    $('pill').textContent = labels[D.status] || D.status;
+    $('pill').className = 'pill ' + (D.status === 'confirmed' ? 'ok' : D.status === 'pending' ? 'warn' : '');
+
+    $('dName').textContent = D.name;
+    $('dEmail').textContent = D.email;
+    $('dWhen').textContent = D.when;
+    $('dPref').textContent = D.preferenceText;
+    $('dTopic').textContent = D.topic || '-';
+    document.querySelectorAll('.cf').forEach(function (el) { el.classList.toggle('hidden', D.status !== 'confirmed'); });
+    $('dWhere').innerHTML = D.mode === 'online'
+      ? 'Online' + (D.link ? ': <a target="_blank" href="' + esc(D.link) + '">' + esc(D.link) + '</a>' : '')
+      : esc(D.location);
+
+    $('edit').classList.toggle('hidden', !active);
+    $('cancelBox').classList.toggle('hidden', !active);
+    if (!active) show('', 'This catch-up is <b>' + esc(labels[D.status] || D.status).toLowerCase() + '</b>. Nothing more to do here.');
+
+    // form values
+    document.querySelectorAll('input[name=mode]').forEach(function (r) { r.checked = r.value === D.mode; });
+    if (!D.mode && (D.preselect === 'online' || D.preselect === 'inperson')) {
+      document.querySelector('input[name=mode][value=' + D.preselect + ']').checked = true;
+    } else if (!D.mode && (D.preference === 'online' || D.preference === 'inperson')) {
+      document.querySelector('input[name=mode][value=' + D.preference + ']').checked = true;
+    }
+    $('location').value = D.location || (D.mode ? '' : D.place);
+    $('note').value = D.note || '';
+    sel = { start: D.start };
+    $('custom').value = '';
+    $('force').checked = false;
+    $('timeBox').classList.add('hidden');
+    $('toggleTime').setAttribute('aria-expanded', 'false');
+    $('toggleTime').textContent = 'Change time';
+    slotsLoaded = false;
+    updateTime();
+    updateMode();
+
+    $('save').textContent = D.status === 'pending' ? 'Confirm and send invite' : 'Save changes and notify guest';
+    $('cancelTitle').textContent = D.status === 'pending' ? 'Decline' : 'Cancel this catch-up';
+    $('cancel').textContent = D.status === 'pending' ? 'Decline request' : 'Cancel catch-up';
+    if (D.preselect === 'decline' && D.status === 'pending') { $('cancel').classList.add('hl'); $('msg').focus(); }
+
+    // quick picks
+    const places = (D.locations || []).slice();
+    if (D.place && places.indexOf(D.place) < 0) places.unshift(D.place);
+    $('locList').innerHTML = ''; $('chips').innerHTML = '';
+    places.forEach(function (p) {
+      const o = document.createElement('option'); o.value = p; $('locList').appendChild(o);
+      const c = document.createElement('button');
+      c.type = 'button'; c.className = 'chip';
+      c.textContent = p === D.place ? p + ' (guest suggestion)' : p;
+      c.onclick = function () { $('location').value = p; };
+      $('chips').appendChild(c);
+    });
+
+    $('histBox').classList.toggle('hidden', !(D.history || []).length);
+    $('hist').innerHTML = (D.history || []).slice().reverse().map(function (h) {
+      return '<li><span class="muted">' + esc(h.at) + '</span> &middot; ' + esc(h.what) + '</li>';
+    }).join('');
+  }
+
+  function updateMode() { $('locBox').classList.toggle('hidden', mode() !== 'inperson'); }
+  function updateTime() {
+    const changed = sel.start !== D.start;
+    $('timeText').innerHTML = esc(rangeText(sel.start)) + (changed ? ' <span class="pill warn">new</span>' : '');
+  }
+
+  document.querySelectorAll('input[name=mode]').forEach(function (r) { r.addEventListener('change', updateMode); });
+
+  $('toggleTime').onclick = function () {
+    const open = $('timeBox').classList.toggle('hidden') === false;
+    this.setAttribute('aria-expanded', String(open));
+    this.textContent = open ? 'Hide' : 'Change time';
+    if (open && !slotsLoaded) loadSlots();
+  };
+  $('custom').addEventListener('change', function () {
+    if (!this.value) return;
+    const d = new Date(this.value);
+    if (isNaN(d.getTime())) return;
+    sel.start = d.toISOString();
+    document.querySelectorAll('.time').forEach(function (x) { x.classList.remove('on'); });
+    updateTime();
+  });
+
+  function loadSlots() {
+    slotsLoaded = true;
+    $('tzNote').textContent = '(your time zone: ' + browserTz + ')';
+    $('slotMsg').textContent = 'Loading free times...';
+    $('days').innerHTML = ''; $('times').innerHTML = '';
+    google.script.run.withSuccessHandler(renderSlots).withFailureHandler(function (e) {
+      $('slotMsg').textContent = (e && e.message) || 'Could not load free times.';
+    }).ownerSlots(D.id, D.token);
+  }
+
+  function renderSlots(slots) {
+    const byDay = {}, keys = [];
+    slots.forEach(function (s) {
+      const d = new Date(s.start), k = d.toDateString();
+      if (!byDay[k]) { byDay[k] = []; keys.push(k); }
+      byDay[k].push(s);
+    });
+    $('slotMsg').textContent = keys.length ? '' : 'No free hours in your working hours. Enter a time below instead.';
+    keys.forEach(function (k, i) {
+      const d = new Date(byDay[k][0].start);
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'day';
+      b.innerHTML = '<small></small><b></b><small></small>';
+      b.children[0].textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
+      b.children[1].textContent = d.getDate();
+      b.children[2].textContent = d.toLocaleDateString(undefined, { month: 'short' });
+      b.setAttribute('aria-label', d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }));
+      b.onclick = function () { showDay(byDay[k], b); };
+      $('days').appendChild(b);
+      if (i === 0) showDay(byDay[k], b);
+    });
+  }
+
+  function showDay(list, btn) {
+    document.querySelectorAll('.day').forEach(function (x) { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
+    btn.classList.add('on'); btn.setAttribute('aria-pressed', 'true');
+    $('times').innerHTML = '';
+    list.forEach(function (s) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'time' + (s.start === sel.start ? ' on' : '');
+      b.textContent = new Date(s.start).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      b.onclick = function () {
+        sel.start = s.start; $('custom').value = '';
+        document.querySelectorAll('.time').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on'); updateTime();
+      };
+      $('times').appendChild(b);
+    });
+  }
+
+  $('edit').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (!mode()) { show('err', 'Choose online or in person.'); return; }
+    if (mode() === 'inperson' && !$('location').value.trim()) { show('err', 'Please enter where you will meet.'); $('location').focus(); return; }
+    busy(true);
+    show('', D.status === 'pending' ? 'Confirming and sending the invite...' : 'Saving and notifying the guest...');
+    const wasPending = D.status === 'pending';
+    google.script.run.withSuccessHandler(function (v) {
+      busy(false); D = v; render();
+      show('ok', '<b>' + (wasPending ? 'Confirmed.' : 'Saved.') + '</b> ' + esc(D.name) + ' got an email and the calendar invite.' +
+        (D.link ? '<br>Meet link: <a target="_blank" href="' + esc(D.link) + '">' + esc(D.link) + '</a>' : ''));
+      window.scrollTo(0, 0);
+    }).withFailureHandler(function (e) {
+      fail(e);
+      if (/Book anyway/.test((e && e.message) || '')) { $('timeBox').classList.remove('hidden'); $('force').focus(); }
+      window.scrollTo(0, 0);
+    }).saveBooking(D.id, D.token, {
+      version: D.version, mode: mode(), location: $('location').value, note: $('note').value,
+      start: sel.start, force: $('force').checked
+    });
+  });
+
+  $('cancel').onclick = function () {
+    const pending = D.status === 'pending';
+    if (!confirm(pending ? 'Decline this request?' : 'Cancel this catch-up? The guest is notified and the event is removed from your calendar.')) return;
+    busy(true); show('', pending ? 'Declining...' : 'Cancelling...');
+    google.script.run.withSuccessHandler(function (v) {
+      busy(false); D = v; render();
+      show('', '<b>' + (pending ? 'Declined.' : 'Cancelled.') + '</b> The calendar entry was removed and ' + esc(D.name) + ' was notified.');
+    }).withFailureHandler(fail).cancelBooking(D.id, D.token, D.version, $('msg').value);
+  };
+
+  render();
+</script>
+</body>
+</html>

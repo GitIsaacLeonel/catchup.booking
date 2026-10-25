@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root { --bg:#f6f7fb; --card:#fff; --text:#1d1d24; --muted:#5f5f6b; --line:#e4e5ec; --accent:#1f5eff; --accent-soft:#e8eeff; --err:#c62828; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+    .wrap { max-width:600px; margin:0 auto; padding:32px 16px 48px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; }
+    h1 { font-size:22px; margin:0 0 4px; }
+    .sub { color:var(--muted); margin:0 0 8px; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid #ffc94d; outline-offset:2px; }
+    label { display:block; font-weight:600; font-size:13px; margin:14px 0 5px; }
+    input, textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+    textarea { min-height:80px; resize:vertical; }
+    fieldset { border:0; padding:0; margin:14px 0 0; }
+    legend { font-weight:600; font-size:13px; margin-bottom:6px; padding:0; }
+    .choices { display:flex; gap:8px; flex-wrap:wrap; }
+    .choice { display:flex; align-items:center; gap:7px; margin:0; font-weight:400; font-size:15px; border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; }
+    .choice input { width:auto; margin:0; }
+    .choice:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+    .consent { display:flex; gap:10px; align-items:flex-start; font-weight:400; font-size:13px; color:var(--muted); margin-top:16px; }
+    .consent input { width:auto; margin-top:3px; }
+    .hp { position:absolute; left:-9999px; }
+    .btn { margin-top:18px; width:100%; padding:13px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-weight:600; font-size:15px; font-family:inherit; cursor:pointer; }
+    .btn:disabled { opacity:.55; cursor:default; }
+    .msg { color:var(--muted); padding:20px 0; }
+    .err { color:var(--err); margin-top:12px; }
+    .done { text-align:center; padding:30px 10px; }
+    .done .tick { font-size:42px; }
+    .when { display:inline-block; background:var(--accent-soft); border-radius:8px; padding:10px 14px; font-weight:600; margin:6px 0 12px; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <div class="card" id="main">
+    <h1 id="title"></h1>
+    <p class="sub" id="sub"></p>
+    <div id="paused" class="msg hidden" role="status"></div>
+
+    <form id="form" autocomplete="on" novalidate>
+      <label for="name">Name</label>
+      <input id="name" name="name" required maxlength="100" autocomplete="name">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required maxlength="200" autocomplete="email">
+      <fieldset>
+        <legend>How would you like to meet?</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="preference" value="any" checked> No preference</label>
+          <label class="choice"><input type="radio" name="preference" value="online"> Online</label>
+          <label class="choice"><input type="radio" name="preference" value="inperson"> In person</label>
+        </div>
+      </fieldset>
+      <div id="placeBox" class="hidden">
+        <label for="place">Preferred area or place (optional)</label>
+        <input id="place" name="place" maxlength="200" placeholder="e.g. near the main station">
+      </div>
+      <label for="topic">What would you like to catch up on? (optional)</label>
+      <textarea id="topic" name="topic" maxlength="1000"></textarea>
+      <label class="consent"><input type="checkbox" id="consent" required> <span id="privacy"></span></label>
+      <input class="hp" name="website" id="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="btn" id="submit" type="submit">Request a catch-up</button>
+      <div class="err" id="err" role="alert"></div>
+    </form>
+  </div>
+
+  <div class="card done hidden" id="done" role="status">
+    <div class="tick" aria-hidden="true">&#10003;</div>
+    <h1>Request sent</h1>
+    <p class="sub">The next free time is reserved for you:</p>
+    <div class="when" id="doneWhen"></div>
+    <p class="sub" id="doneText"></p>
+  </div>
+</main>
+
+<script>
+  const DATA = <?!= data ?>;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const $ = function (id) { return document.getElementById(id); };
+
+  $('title').textContent = 'Book a catch-up with ' + DATA.ownerName;
+  $('sub').textContent = 'A ' + (DATA.minutes === 60 ? '1 hour' : DATA.minutes + ' minute') + ' catch-up. Send your request and the next free time in ' +
+    DATA.ownerName + '\'s calendar is reserved for you. ' + DATA.ownerName + ' then confirms it and decides with you whether to meet online or in person.';
+  $('privacy').textContent = DATA.privacy;
+
+  function preference() { return document.querySelector('input[name=preference]:checked').value; }
+  document.querySelectorAll('input[name=preference]').forEach(function (r) {
+    r.addEventListener('change', function () { $('placeBox').classList.toggle('hidden', preference() !== 'inperson'); });
+  });
+
+  $('form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    const err = $('err');
+    if (!$('name').value.trim()) { err.textContent = 'Please enter your name.'; $('name').focus(); return; }
+    if (!$('email').checkValidity() || !$('email').value) { err.textContent = 'Please enter a valid email address.'; $('email').focus(); return; }
+    if (!$('consent').checked) { err.textContent = 'Please accept the privacy notice.'; $('consent').focus(); return; }
+    const btn = $('submit');
+    btn.disabled = true; btn.textContent = 'Finding the next free time...';
+    err.textContent = '';
+    google.script.run
+      .withSuccessHandler(function (res) {
+        $('main').classList.add('hidden');
+        $('done').classList.remove('hidden');
+        $('doneWhen').textContent = res.when || '';
+        $('doneText').textContent = 'You will get an email with the final time and the place or the meeting link once ' +
+          DATA.ownerName + ' confirms your catch-up. The time may still be adjusted.';
+      })
+      .withFailureHandler(function (e) {
+        btn.disabled = false; btn.textContent = 'Request a catch-up';
+        err.textContent = (e && e.message) || 'Something went wrong. Please try again.';
+      })
+      .submitBooking({
+        name: $('name').value,
+        email: $('email').value,
+        topic: $('topic').value,
+        preference: preference(),
+        place: $('place').value,
+        consent: $('consent').checked,
+        website: $('website').value,
+        timezone: tz
+      });
+  });
+
+  if (DATA.paused) {
+    $('sub').textContent = '';
+    $('form').classList.add('hidden');
+    $('paused').classList.remove('hidden');
+    $('paused').textContent = DATA.pausedMessage;
+  }
+</script>
+</body>
+</html>
