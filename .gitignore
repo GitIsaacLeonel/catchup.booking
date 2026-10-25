@@ -3,3 +3,6 @@
 *.log
 .DS_Store
 Thumbs.db
+
+# Private business notes
+GO-TO-MARKET.md
